@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Портал подтверждения подписи</title>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+  <style>
+    body {
+      font-family: "Arial", sans-serif;
+      background: #f4f6f9;
+      margin: 0;
+      padding: 0;
+    }
+    .header {
+      background: #0a3d62;
+      color: white;
+      padding: 20px;
+      text-align: center;
+      font-size: 20px;
+      font-weight: bold;
+      letter-spacing: 1px;
+    }
+    .container {
+      max-width: 800px;
+      margin: 30px auto;
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+    }
+    h2 {
+      text-align: center;
+      color: #2c3e50;
+    }
+    .status {
+      font-size: 18px;
+      padding: 15px;
+      border-radius: 8px;
+      text-align: center;
+      margin: 20px 0;
+    }
+    .success {
+      background: #dff0d8;
+      color: #2d572c;
+      border: 1px solid #c3e6cb;
+    }
+    .error {
+      background: #f8d7da;
+      color: #842029;
+      border: 1px solid #f5c2c7;
+    }
+    .info p {
+      font-size: 16px;
+      margin: 8px 0;
+    }
+    .footer {
+      text-align: center;
+      font-size: 14px;
+      margin-top: 30px;
+      color: #7f8c8d;
+    }
+    .upload-section {
+      text-align: center;
+      margin: 20px 0;
+    }
+    input[type=file] {
+      padding: 10px;
+      margin-top: 10px;
+    }
+    #qrcode {
+      margin-top: 20px;
+      display: flex;
+      justify-content: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">PODSHOOTA-CHODAK ITB</div>
+  <div class="container">
+    <h2>Подтверждение подписи</h2>
+    <div id="statusBox" class="status"></div>
+    <div id="info" class="info"></div>
+
+    <div class="upload-section">
+      <h3>📑 Прикрепить документ и получить QR-код</h3>
+      <input type="file" id="fileInput" />
+      <div id="qrcode"></div>
+    </div>
+  </div>
+  <div class="footer">
+    Подписано: bosh yuristkonsult — PODSHOOTA-CHODAK ITB
+  </div>
+
+  <script>
+    // "База данных" с подписями
+    const signatures = {
+      "123": {
+        filename: "Contract_2025.pdf",
+        signer: "Podshoota-Chodak ITB bosh yuristkonsult",
+        date: "31.08.2025"
+      },
+      "124": {
+        filename: "Order_15.pdf",
+        signer: "Podshoota-Chodak ITB bosh yuristkonsult",
+        date: "01.09.2025"
+      }
+    };
+
+    // Получаем id из URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const id = urlParams.get("id");
+
+    const statusBox = document.getElementById("statusBox");
+    const infoBox = document.getElementById("info");
+
+    if (id && signatures[id]) {
+      const s = signatures[id];
+      statusBox.className = "status success";
+      statusBox.textContent = "✅ Документ подписан и подтвержден";
+      infoBox.innerHTML = `
+        <p><b>Документ:</b> ${s.filename}</p>
+        <p><b>Подписал:</b> ${s.signer}</p>
+        <p><b>Дата подписи:</b> ${s.date}</p>
+        <p><b>ID подписи:</b> ${id}</p>
+      `;
+    } else if (id) {
+      statusBox.className = "status error";
+      statusBox.textContent = "❌ Подпись не найдена";
+    } else {
+      statusBox.className = "status";
+      statusBox.textContent = "Сканируйте QR-код для проверки подписи";
+    }
+
+    // Генерация QR-кода после загрузки документа
+    document.getElementById("fileInput").addEventListener("change", function(event) {
+      const file = event.target.files[0];
+      if (file) {
+        const fakeId = Math.floor(Math.random()*100000); // создаём ID
+        const url = window.location.origin + window.location.pathname + "?id=" + fakeId;
+
+        document.getElementById("info").innerHTML = `
+          <p><b>Документ:</b> ${file.name}</p>
+          <p><b>ID подписи:</b> ${fakeId}</p>
+          <p>Ссылка: <a href="${url}" target="_blank">${url}</a></p>
+        `;
+
+        document.getElementById("statusBox").className = "status success";
+        document.getElementById("statusBox").textContent = "✅ Документ подписан и QR-код создан";
+
+        QRCode.toCanvas(document.createElement("canvas"), url, function (err, canvas) {
+          if (err) throw err;
+          document.getElementById("qrcode").innerHTML = "";
+          document.getElementById("qrcode").appendChild(canvas);
+        });
+      }
+    });
+  </script>
+</body>
+</html>
