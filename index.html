@@ -10,7 +10,7 @@
       padding: 30px;
     }
     .card {
-      max-width: 700px;
+      max-width: 750px;
       margin: auto;
       background: white;
       padding: 30px;
@@ -35,6 +35,13 @@
       font-size: 14px;
       color: gray;
     }
+    .hash-box {
+      background: #f0f0f0;
+      padding: 10px;
+      border-radius: 8px;
+      font-family: monospace;
+      word-wrap: break-word;
+    }
   </style>
 </head>
 <body>
@@ -54,6 +61,8 @@
       <p><b>Hujjat nomi:</b> <span id="docName"></span></p>
       <p><b>Imzolovchi:</b> Podshoota-Chodak ITB bosh yuristkonsult</p>
       <p><b>Sana:</b> <span id="docDate"></span></p>
+      <p><b>Hujjat xeshi:</b></p>
+      <div class="hash-box" id="docHash"></div>
     </div>
   </div>
 
@@ -69,8 +78,14 @@
       return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
     }
 
-    // QR generatsiya qilish
-    function generateQR() {
+    async function sha256(message) {
+      const msgBuffer = new TextEncoder().encode(message);
+      const hashBuffer = await crypto.subtle.digest("SHA-256", msgBuffer);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      return hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
+    }
+
+    async function generateQR() {
       const fileInput = document.getElementById("fileInput");
       if (!fileInput.files.length) {
         alert("Hujjatni yuklang!");
@@ -80,11 +95,15 @@
       const signer = "Podshoota-Chodak ITB bosh yuristkonsult";
       const date = getToday();
 
+      // хэш: имя файла + дата + подпись
+      const hash = await sha256(fileName + "|" + signer + "|" + date);
+
       // URLga parametr sifatida yozamiz
       const url = window.location.origin + window.location.pathname +
                   "?file=" + encodeURIComponent(fileName) +
                   "&signer=" + encodeURIComponent(signer) +
-                  "&date=" + encodeURIComponent(date);
+                  "&date=" + encodeURIComponent(date) +
+                  "&hash=" + encodeURIComponent(hash);
 
       document.getElementById("qrcode").innerHTML = "";
       new QRCode(document.getElementById("qrcode"), {
@@ -96,6 +115,7 @@
       // ekranda ko'rsatish
       document.getElementById("docName").innerText = fileName;
       document.getElementById("docDate").innerText = date;
+      document.getElementById("docHash").innerText = hash;
       document.getElementById("result").style.display = "block";
     }
 
@@ -108,6 +128,7 @@
         document.getElementById("result").style.display = "block";
         document.getElementById("docName").innerText = params.get("file");
         document.getElementById("docDate").innerText = params.get("date");
+        document.getElementById("docHash").innerText = params.get("hash");
       }
     };
   </script>
